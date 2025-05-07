@@ -1,7 +1,7 @@
 import arcpy
 import pandas as pd
 import matplotlib.pyplot as plt
-import Lab4_functions as l4
+import BF_lab4_functions as l4
 import importlib
 
 
@@ -24,7 +24,7 @@ import importlib
 #   
 # Set the workspace to point to the geodatabase you are using for this lab
 
-arcpy.env.workspace = r"R:\2025\Spring\GEOG562\Instructors\kennedy_2025\Lab4\Lab4_arcproject_REK\Lab4_arcproject_REK.gdb" 
+arcpy.env.workspace = r"R:\2025\Spring\GEOG562\Students\fateb\Lab4_2025\lab4_arcproject\lab4_arcproject.gdb" 
 
 ############################################################################
 # Block 3:  We are going to work with the notion of extending raster objects
@@ -39,14 +39,30 @@ importlib.reload(l4)
 #  it works.  Point to the Landsat_image_corv raster, and print out the 
 #   coordinate bounds of the raster
 
+import arcpy
+
+# Define the input raster and the target geodatabase
+input_raster = r"R:\2025\Spring\GEOG562\Students\fateb\Lab4_2025\lab4_arcproject\Landsat_image_corv.tif"
+target_gdb = r"R:\2025\Spring\GEOG562\Students\fateb\Lab4_2025\lab4_arcproject\lab4_arcproject.gdb"
+output_raster = f"{target_gdb}\\Landsat_image_corv"
+
+# Copy the raster into the geodatabase
+arcpy.management.CopyRaster(input_raster, output_raster)
+
+print("Raster copied successfully!")
+
 r = l4.SmartRaster("Landsat_image_corv")
+r._extract_metadata()
 print(r.metadata["bounds"])
 
 
 # Question 1
 #  Why do we need to use the "super()" function in the definition of the SmartRaster?
 
-# Your answer:
+# Your answer: The super function calls the parent class. This is important in extending a class because
+# we want to make sure its properly initialized and its methods are available to the child class.
+#In the context of SmartRaster, if it is a subclass of another class (e.g., arcpy.sa.Raster), 
+# using super() ensures that the parent class's initialization logic is executed.
 
 
 
@@ -67,8 +83,9 @@ print(r.metadata["bounds"])
 #       The method should return a tuple with the okay, NDVI_object
 
 #  Again, you'll need to add code to the calculate_ndvi function
-
+importlib.reload(l4)
 okay, ndvi = r.calculate_ndvi()
+NDVI_corv = ndvi
 
 # Assuming this is okay, write it to a new raster that we can use later
 out_ndvi_file = "NDVI_corv"
@@ -93,7 +110,9 @@ else:
 #    set them here -- why did it work?
 
 #  Your answer:
-
+#In the method definition band4 is set to 4 and band3 is set to 3. If you want to change 
+# the default values, you can do so when calling the method. However in this case when you
+# call the method without any arguments, it will use the default values of 4 and 3.
 
 
 
@@ -141,8 +160,12 @@ smart_vector.save_as("Corvallis_parcels_plusNDVI")
 #     reasonably?  Any observations or oddities? 
 # 
 
-#Your answer
-
+#
+#When i changed around the symbology I could see that the NDVI values were assigned differentially to 
+# different parcels. There is also a MEAN field that is null for everyone. I dont know if I messed up
+# on removing that. Besides that I dont have any huge observations as I dont know what exactly I expected
+# the NDVI to be for corvallis since I havent worked with it much before.But the large parks tend to have 
+# higher numbers which is good. 
 
 
 

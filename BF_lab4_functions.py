@@ -30,36 +30,33 @@ class SmartRaster(arcpy.Raster):
             "n_bands": n_bands, 
             "pixelType": pixelType
         }
+    def calculate_ndvi(self, band4_index=4, band3_index=3):
+        # Set up an indicator for success
+        okay = True
 
+        try:
+            # Check if the raster exists
+            if arcpy.Exists(self):
+                # Load the NIR and Red bands
+                nir = arcpy.Raster(f"{self}\\Band_{band4_index}")
+                red = arcpy.Raster(f"{self}\\Band_{band3_index}")
 
-    # def calculate_ndvi(self,  band4_index = 4, band3_index = 3):
+                try:
+                    # Calculate NDVI
+                    ndvi_raster = (nir - red) / (nir + red)
+                    return okay, ndvi_raster
 
-    #     """Calculate NDVI using the NIR and Red bands."""
-       
-    #     # set up an indicator about whether things work for later
-    #     okay = True
+                except Exception as e:  # Handle math or raster issues
+                    okay = False
+                    return okay, e
 
-    #     #embed everything in a try/except block
-    #     # First get the bands.  You can use the band numbers to get the bands
-    #     #   from the raster. 
+            else:  # Raster does not exist
+                okay = False
+                return okay, f"{self} does not exist in the workspace: {arcpy.env.workspace}"
 
-    #     # Your code:
-
-
-      
-
-
-
-    #     # Now we have the two bands.    
-    #     #   calculate (NIR-Red)/(NIR+red), which is the formula for
-    #     #   NDVI. 
-
-    #     #  Embed in a try/except block, so we can catch any errors that might occur
-
-    #     # Calculate the NDVI, and return an "okay, ndvi" if it worked, 
-    #     #   okay, e as the exception if it didn't.
-
-    #     #your code:
+        except Exception as e:  # Handle other issues
+            okay = False
+            return okay, e
 
 
        
@@ -70,126 +67,112 @@ class SmartRaster(arcpy.Raster):
 
 
 
-# Potential smart vector layer
-
-# class SmartVectorLayer:
-#     def __init__(self, feature_class_path):
-#         """Initialize with a path to a vector feature class"""
-#         self.feature_class = feature_class_path
+#Potential smart vector layer
+class SmartVectorLayer:
+    def __init__(self, feature_class_path):
+        """Initialize with a path to a vector feature class"""
+        self.feature_class = feature_class_path
         
-#         # Check if it exists
-#         if not arcpy.Exists(self.feature_class):
-#             raise FileNotFoundError(f"{self.feature_class} does not exist.")
-#     def summarize_field(self, field):
-#         # set up a tracking variable to track if things work
-#         okay = True
-
-#         #check if the field is in the legit list
-#         try: 
-#             existing_fields = [f.name for f in arcpy.ListFields(self.feature_class)]
-#             if field not in existing_fields:
-#                 okay = False
-#                 print(f"The field {field} is not in list of possible fields")
-#                 return False, None
-#         except Exception as e:
-#             print(f"Problem checking the fields: {e}")
-
-#         # now go through and get the mean value
-#         try: 
-#             with arcpy.da.SearchCursor(self.feature_class, [field]) as cursor:
-#                 vals = [row[0] for row in cursor if row[0] is not None and not math.isnan(row[0])]
-#             mean = sum(vals)/len(vals)
-#             return okay, mean
-#         except Exception as e:
-#             print(f"Problem calculating mean: {e}")
-#             okay = False
-#             return okay, None
-
+        # Check if it exists
+        if not arcpy.Exists(self.feature_class):
+            raise FileNotFoundError(f"{self.feature_class} does not exist.")
     
-#     def zonal_stats_to_field(self, raster_path, statistic_type="MEAN", output_field="ZonalStat"):
-#         """
-#         For each feature in the vector layer, calculates the zonal statistic from the raster
-#         and writes it to a new field.
+    def summarize_field(self, field):
+        # Existing method (unchanged)
+        okay = True
+        try: 
+            existing_fields = [f.name for f in arcpy.ListFields(self.feature_class)]
+            if field not in existing_fields:
+                okay = False
+                print(f"The field {field} is not in list of possible fields")
+                return False, None
+        except Exception as e:
+            print(f"Problem checking the fields: {e}")
+
+        try: 
+            with arcpy.da.SearchCursor(self.feature_class, [field]) as cursor:
+                vals = [row[0] for row in cursor if row[0] is not None and not math.isnan(row[0])]
+            mean = sum(vals)/len(vals)
+            return okay, mean
+        except Exception as e:
+            print(f"Problem calculating mean: {e}")
+            okay = False
+            return okay, None
+
+    def zonal_stats_to_field(self, raster_path, statistic_type="MEAN", output_field="ZonalStat"):
+        """
+        For each feature in the vector layer, calculates the zonal statistic from the raster
+        and writes it to a new field.
         
-#         Parameters:
-#         - raster_path: path to the raster
-#         - statistic_type: type of statistic ("MEAN", "SUM", etc.)
-#         - output_field: name of the field to create to store results
-#         """
-#         # set up a tracking variable to track if things work
-#         okay = True
+        Parameters:
+        - raster_path: path to the raster
+        - statistic_type: type of statistic ("MEAN", "SUM", etc.)
+        - output_field: name of the field to create to store results
+        """
+        # Set up a tracking variable
+        okay = True
 
-#         # Add a field to store the zonal stats result.
-#         #  If the field already exists, however, return to the user
-#         #  to let them know that it exists. 
+        # Create a temporary table to hold zonal statistics
+        temp_table = "in_memory\\temp_zonal_stats"
+        if arcpy.Exists(temp_table):
+            arcpy.management.Delete(temp_table)
 
-#         #Your code
+        # Use an arcpy.sa command to calculate the zonal stats
+        try:
+            arcpy.sa.ZonalStatisticsAsTable(
+                in_zone_data=self.feature_class,
+                zone_field="OBJECTID",  # Adjust based on your unique ID field
+                in_value_raster=raster_path,
+                out_table=temp_table,
+                statistics_type=statistic_type
+            )
+            print(f"Zonal statistics table created: {temp_table}")
+        except Exception as e:
+            print(f"Error calculating zonal statistics: {e}")
+            okay = False
+            return okay
 
+        # Now join the results back and update the field
+        zonal_results = {}
 
+        # First, read through the Zonal stats table we just created
+        try:
+            table_count = 0
+            with arcpy.da.SearchCursor(temp_table, ["OBJECTID_1", statistic_type]) as cursor:
+                for row in cursor:
+                    zonal_results[row[0]] = row[1]
+                    table_count += 1
+            print(f"Processed {table_count} zonal stats")
+        except Exception as e:
+            print(f"Problem reading the zonal results table: {e}")
+            okay = False
+            return okay
 
-      
+        # Then update the feature class with the zonal_results
+        print("Joining zonal stats back to Object ID")
+        try:
+            with arcpy.da.UpdateCursor(self.feature_class, ["OBJECTID", output_field]) as cursor:
+                for row in cursor:
+                    object_id = row[0]
+                    if object_id in zonal_results:
+                        row[1] = zonal_results[object_id]
+                        cursor.updateRow(row)
+            print(f"Zonal stats '{statistic_type}' added to field '{output_field}'.")
+        except Exception as e:
+            print(f"Problem updating the feature class: {e}")
+            okay = False
+            return okay
 
-#         # Create a temporary table to hold zonal statistics
-#         temp_table = "in_memory\\temp_zonal_stats"
-#         if arcpy.Exists(temp_table):
-#             arcpy.management.Delete(temp_table)
+        # Clean up
+        arcpy.management.Delete(temp_table)
+
+        return okay
+
         
-#         # Use an arcpy.sa command to calculate the 
-#         #   zonal stats.  Embed in a try/except block
-
-#         #  Your code
-
-
-        
-#         # Now join the results back and update the field
-#         zonal_results = {}
-        
-#         # First, read through the Zonal stats table we just created. 
-
-#         try:
-#             table_count = 0
-#             # NOTE:  the "OBJECTID_1" is needed because when Arc builds 
-#             #   the temporary zonal stats file, it adds its own new OBJECTID
-#             #   that ascends in incremental order. But the unique ID from the
-#             #   original attribute table is what we want to focus on -- its 
-#             #    name gets adjusted with an _1 at the end so the original value is kept
-#             #    but to keep it unique from the OBJECTID that Arc builds for the
-#             #    zonal table.  Kind of annoying. 
-
-#             with arcpy.da.SearchCursor(temp_table, ["OBJECTID_1", statistic_type]) as cursor:
-#                 for row in cursor:
-#                     zonal_results[row[0]] = row[1]
-#                     table_count+=1
-#             print(f"Processed {table_count} zonal stats")
-#         except Exception as e:
-#             print(f"Problem reading the zonal results table: {e}")
-#             okay = False
-#             return okay
-        
-
-        
-#         #Then Update the feature class with the zonal_results
-#         #  Use the Object ID to find the right 
-#         #    zonal stats number from the zonal_results dictionary
-#         #    as you go through the attribute table of the feature class
-#         print("Joining zonal stats back to Object ID")
-               
-#         # Your code
-
-
-
-
-#         # Clean up
-#         arcpy.management.Delete(temp_table)
-
-#         print(f"Zonal stats '{statistic_type}' added to field '{output_field}'.")
-#         return okay
-
-    
-#     def save_as(self, output_path):
-#         """Save the current vector layer to a new feature class"""
-#         arcpy.management.CopyFeatures(self.feature_class, output_path)
-#         print(f"Saved to {output_path}")
+    def save_as(self, output_path):
+            """Save the current vector layer to a new feature class"""
+            arcpy.management.CopyFeatures(self.feature_class, output_path)
+            print(f"Saved to {output_path}")
 
 
 #     # Take our vector object and turn it into a pandas dataframe
