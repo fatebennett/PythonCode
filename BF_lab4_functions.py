@@ -31,30 +31,46 @@ class SmartRaster(arcpy.Raster):
             "pixelType": pixelType
         }
     def calculate_ndvi(self, band4_index=4, band3_index=3):
-        # Set up an indicator for success
+        """
+        Calculate the Normalized Difference Vegetation Index (NDVI) for a raster dataset.
+
+        Parameters:
+        self (str): Path to the raster dataset.
+        band4_index (int): Index of the Near-Infrared (NIR) band. Default is 4.
+        band3_index (int): Index of the Red band. Default is 3.
+
+        Returns:
+        tuple: A tuple containing a boolean indicating success (True/False) and either the NDVI raster or an error message/exception.
+        """
+        # Initialize a flag to indicate success
         okay = True
 
         try:
-            # Check if the raster exists
+            # Check if the raster dataset exists at the specified path
             if arcpy.Exists(self):
-                # Load the NIR and Red bands
+                # Load the Near-Infrared (NIR) band using the specified band index
                 nir = arcpy.Raster(f"{self}\\Band_{band4_index}")
+                # Load the Red band using the specified band index
                 red = arcpy.Raster(f"{self}\\Band_{band3_index}")
 
                 try:
-                    # Calculate NDVI
+                    # Perform the NDVI calculation: (NIR - Red) / (NIR + Red)
                     ndvi_raster = (nir - red) / (nir + red)
+                    # Return success flag and the calculated NDVI raster
                     return okay, ndvi_raster
 
-                except Exception as e:  # Handle math or raster issues
+                except Exception as e:
+                    # Handle any errors during the NDVI calculation (e.g., division by zero, invalid raster data)
                     okay = False
                     return okay, e
 
-            else:  # Raster does not exist
+            else:
+                # If the raster dataset does not exist, return an error message
                 okay = False
                 return okay, f"{self} does not exist in the workspace: {arcpy.env.workspace}"
 
-        except Exception as e:  # Handle other issues
+        except Exception as e:
+            # Handle any other unexpected errors (e.g., issues with accessing the raster dataset)
             okay = False
             return okay, e
 
@@ -207,18 +223,27 @@ class SmartVectorLayer:
         #    to a "rows" list variable.  This is a very short 
         #    command -- should be old hat by now!  
         try:
-            rows = [row for row in arcpy.da.SearchCursor(self.feature_class, fields)]
+    # Use a list comprehension to iterate through the search cursor
+    # "self.feature_class" is the feature class being queried.
+    # "fields" is a list of field names to extract from the feature class.
+                rows = [row for row in arcpy.da.SearchCursor(self.feature_class, fields)]
         except Exception as e:
+    # If an error occurs during the search cursor operation, print the error message.
+    # This could happen if the feature class doesn't exist, the fields are invalid,
+    # or there are permission issues accessing the data.
             print(f"Error extracting rows: {e}")
+    # Set the "okay" flag to False to indicate failure.
             okay = False
+    # Return a tuple with "okay" as False and "None" for the DataFrame.
             return okay, None
 
-        
-
-
-        # Step 3: Convert to pandas DataFrame
+# Step 3: Convert to pandas DataFrame
+# The "rows" list, which contains the data extracted from the feature class,
+# is converted into a pandas DataFrame for easier manipulation and analysis.
+# The "fields" list is used to set the column names of the DataFrame.
         df = pd.DataFrame(rows, columns=fields)
-                
+
+# Return the "okay" flag (True, indicating success) and the resulting DataFrame.
         return okay, df
 
 
