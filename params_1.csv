@@ -1,0 +1,6 @@
+Param,Value
+x_field,NUM_BEDROO
+y_field ,STRUCT_VAL
+x_min,2
+x_max,16
+outfile,Num_Bedroom_vs_Struct_val_with_minmax.png

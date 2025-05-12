@@ -181,7 +181,7 @@ smart_vector.save_as("Corvallis_parcels_plusNDVI")
 #  and add the small chunk of code I have asked you
 #  to do.  Most of the functionality is already there
 
-
+importlib.reload(l4)
 okay, df = smart_vector.extract_to_pandas_df()
 
 
@@ -192,6 +192,10 @@ okay, df = smart_vector.extract_to_pandas_df()
 #   code?  
 
 # Your answer
+# I think it means that the default is that if the user does not input fields than the default for the fields
+# value is none. This means if they dont filter the fields than all of them will be returned. If
+# they want less fields then they can input that list and filter out a smaller amount of fields. It 
+# seems like a good way to set it up. It gives good multifunctionality for the user.
 
 
 
@@ -228,7 +232,9 @@ sp.scatterplot(x_field, y_field, x_min=1901, x_max = 2030)
 
 
 # Your answer:
-
+# The df_to_plot is a Pandas DataFrame containing the data used for the scatterplot.
+# The second line filters the DataFrame to include only rows where the x_field values are greater than or equal to x_min. 
+# This ensures that only data within the specified range (x_min and potentially x_max) is used for plotting.
 
 
 
@@ -285,19 +291,53 @@ if ok:
 #    journal. 
 #   Try a couple different variants of fields and ranges
 
+
+# Load the original CSV file
+
+param_file = 'params_1.csv' 
+
+
+ok = sp.plot_from_file(param_file)
+if ok:
+    print("Done plotting")
+
+
+
+param_file = 'params_1.csv' 
+
+
+ok = sp.plot_from_file(param_file)
+if ok:
+    print("Done plotting")
+
+
+
+param_file = 'params_1.csv' 
+
+
+ok = sp.plot_from_file(param_file)
+if ok:
+    print("Done plotting")
+
+
+# Generate the scatterplot (assuming you have a function to do this)
+
+
 # Question 8.1
 #  What will happen if you give it a field that is not
 #    numeric?   How might you make this work better?
 
 # Your answer
-
+# If you give it a field that is not numeric, it will throw an error. This would work 
+# better if you added a check to see if the field is numeric before trying to plot it. 
+#This could save time and effort by preventing the error from occurring in the first place.
 
 
 
 # Question 8.2
 #  In your lab document, paste in a couple of the
 #    examples of the output .png files. 
-
+#DONE
 
 
 # Question 8.3
@@ -308,6 +348,9 @@ if ok:
 #   how you might achieve that?
 
 # Your answer:
+# I would use the x and y variables to create a string that contains the names of the variables. Then
+# I would just make the file name concatenate the x and y variables into a string that is the file name
+#that would be in the filename section. This I would just do manually in Excel.
 
 
 
